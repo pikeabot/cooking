@@ -45,6 +45,15 @@ class Train(Base):
     def __repr__(self):
         return "<Train(recipe_id='%d', cuisine='%s')>" % (self.recipe_id, self.cuisine)
 
+class Test(Base):
+    __tablename__ = 'test_data'
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    recipe_id = Column(Integer)
+    ingredients = relationship("Test_Ingredients", backref="test_data")
+
+    def __repr__(self):
+        return "<Test(recipe_id='%d')>" % (self.recipe_id)
+
 #create tables Node and node_to_node
 Base.metadata.create_all(engine, checkfirst=True)
 
@@ -54,11 +63,17 @@ class Ingredients(Base):
     train_id = Column(Integer, ForeignKey("training_data.id"), primary_key=True)
     ingredient = Column(String(500))
 
-    #def __repr__(self):
-    #    return "<Train(train_id='%d', ingredient='%s')>" % (self.train_id, self.ingredient)
+class Test_Ingredients(Base):
+    __tablename__ = 'test_ingredients'
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    test_id = Column(Integer, ForeignKey("test_data.id"), primary_key=True)
+    ingredient = Column(String(500))
 
 #create tables Node and node_to_node
 Base.metadata.create_all(engine, checkfirst=True)
+
+
+
 
 engine = create_engine('postgresql://train:kaggle@localhost/{0}'.format(sys.argv[3]))
 Session = sessionmaker(bind=engine)
@@ -77,6 +92,23 @@ for j in jlines:
     new_recipe.ingredients.append(new_ingredient)
     session.add(new_ingredient)
   session.add(new_recipe)
+
+  session.commit()
+
+f.close()
+
+f=open('test.json', 'rb')
+test_lines=''.join(f.readlines())
+jtlines = json.loads(test_lines)
+
+for jt in jtlines:
+  #add recipe
+  new_test_recipe = Test(recipe_id=jt['id'], ingredients=[]) 
+  for i in jt['ingredients']:
+    new_test_ingredient = Test_Ingredients(ingredient=i)
+    new_test_recipe.ingredients.append(new_test_ingredient)
+    session.add(new_test_ingredient)
+  session.add(new_test_recipe)
 
   session.commit()
 
